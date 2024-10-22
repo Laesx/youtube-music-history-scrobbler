@@ -1,5 +1,7 @@
 {
+  "type": "module",
   "dependencies": {
-    "youtube-music-api": "^1.0.6"
+    "youtube-music-api": "^1.0.6",
+    "ytmusic-api": "^5.2.1"
   }
 }

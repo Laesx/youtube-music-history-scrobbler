@@ -1,15 +1,14 @@
-"use strict";
+import fs from "fs";
+import YTMusic from "ytmusic-api";
 
-const fs = require("fs");
-const YoutubeMusicApi = require("youtube-music-api");
-const api = new YoutubeMusicApi();
-
+const api = new YTMusic.default();
 const rawData = fs.readFileSync("watch-history.json");
 const parsedData = JSON.parse(rawData);
+
 // This is the array that will eventually be written to the JSON
 let finishedArr = [];
+await api.initialize();
 
-console.log("Filtering initial file for only YouTube Music results");
 //Parsing the JSON for all the data it has
 const initData = function () {
   for (let i of parsedData) {
@@ -21,38 +20,28 @@ const initData = function () {
       if (rawArtist !== undefined) {
         if (rawArtist.includes(" - Topic")) {
           const artist = rawArtist.slice(0, -8);
-          const title = i.title.slice(8);
-          const songId = i.titleUrl.slice(32);
+          const title = i.title.slice(19);
+          const songId = i.titleUrl.slice(34);
           // Long thing but it just takes the little sections of the text for month, day, and year and reorders them
           // const time = `${i.time.slice(5, 7)}/${i.time.slice(
           //   8,
           //   10
           // )}/${i.time.slice(0, 4)} ${i.time.slice(11, 16)}`;
           const time = i.time;
-          newObj.artistName = artist;
+
+          newObj.artistName = artist.replace('\\"', '"').replace('\\\"', '"');
           newObj.trackName = title;
           newObj.ts = time;
           newObj.id = songId;
+
           finishedArr.push(newObj);
         }
       }
     }
   }
 };
-initData();
 
-console.log(
-  "\x1b[1m",
-  `Found ${finishedArr.length} Youtube Music songs in watch-history.json`
-);
-console.log(
-  "\x1b[31m%s\x1b[4m",
-  `watch-history.json does not have album names, grabbing them from Youtube API (only 90% success rate)`
-);
-console.log(
-  "\x1b[35m%s",
-  "If the program stops before it says file written, an error occured, just close and re-run"
-);
+const indexIncrement = 20;
 
 // Count variables to ensure batching and finishing happens
 let lastIndex = 0;
@@ -68,33 +57,29 @@ const batchAPI = function (index) {
   // Have to store index outside to prevent double-calling this in the callback loop
   curIndex = index;
   console.log("\x1b[0m", `Api Querying items ${lastIndex} to ${curIndex}`);
-  api.initalize().then((info) => {
-    finishedArr.map((d, i) => {
-      if (i >= lastIndex && i <= index) {
-        const id = d.id;
-        if (id) {
-          api.search(id).then((result) => {
-            callback(result, i);
-          });
-        }
-      }
-    });
+  finishedArr.map((d, i) => {
+    if (i >= lastIndex && i <= index) {
+      api.searchSongs(`${d.artistName} - ${d.trackName}`).then((result) => {
+        callback(result, i);
+      });
+    }
   });
 };
-batchAPI(1000);
 
 // I could've done this in the callback, but it made sense to refactor it out
 function callback(result, i) {
   callbackCount++;
-  if (result.content[0]?.album) {
-    finishedArr[i].albumName = result.content[0].album.name;
+  if (result[0]?.album) {
+    finishedArr[i].albumName = result[0].album.name;
     successfullAPIs++;
     // console.log(curIndex, successfullAPIs, i, callbackCount);
+
     if (callbackCount > curIndex - 3) {
       console.log(`Successfully Grabbed ${successfullAPIs} Album Names So Far`);
       lastIndex = curIndex;
-      batchAPI(curIndex + 1000);
+      batchAPI(curIndex + indexIncrement);
     }
+
     if (callbackCount + 10 > finishedArr.length) {
       !finishCalled && finish();
     }
@@ -155,3 +140,16 @@ function finish() {
     console.log("\x1b[32m%s\x1b[0m", ":)");
   }, 5000);
 }
+
+(() => {
+  console.log("\n\tFiltering initial file for only YouTube Music results\n");
+
+  initData();
+  finishedArr = finishedArr.slice(0, 500);
+
+  console.log(`\n\tFound ${finishedArr.length} Youtube Music songs in watch-history.json`);
+  console.log("\twatch-history.json does not have album names, grabbing them from Youtube API (only 90% success rate)");
+  console.log("\tIf the program stops before it says file written, an error occured, just close and re-run\n");
+
+  batchAPI(indexIncrement);
+})();
