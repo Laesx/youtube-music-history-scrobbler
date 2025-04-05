@@ -1,6 +1,8 @@
 # Youtube Music History Scrobbler
 
-## Fixed as of 05/04/2025
+## ~~Fixed as of 05/04/2025~~
+
+NVM it's broken, the track names are pretty mangled for some reason
 
 It was a bit scary because it did 16k API queries at once but it somehow didn't rate limit me lol
 
@@ -8,6 +10,7 @@ You have to install the node modules with `npm install` o `bun install` or somet
 
 I think it currently ignores your own library uploads I'll look into fixing that or make a separate function to extract them separately
 
+---
 
 After recently starting to use Last.fm, I wondered if there was a way to import my previous listening.
 I found solutions for Spotify and other services, but none for YTM.
