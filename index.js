@@ -146,7 +146,7 @@ function finish() {
   console.log("\n\tFiltering initial file for only YouTube Music results\n");
 
   initData();
-  finishedArr = finishedArr.slice(0, 500);
+  // finishedArr = finishedArr.slice(0, 500);
 
   console.log(`\n\tFound ${finishedArr.length} Youtube Music songs in watch-history.json`);
   console.log("\twatch-history.json does not have album names, grabbing them from Youtube API (only 90% success rate)");
