@@ -1,7 +1,8 @@
 import fs from "fs";
 import YTMusic from "ytmusic-api";
 
-const api = new YTMusic.default();
+// Initialize the API correctly
+const api = new YTMusic();
 const rawData = fs.readFileSync("watch-history.json");
 const parsedData = JSON.parse(rawData);
 
